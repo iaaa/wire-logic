@@ -1,0 +1,237 @@
+body
+  .ui.borderless.main.menu
+    .ui.text.container
+      a.header.item(href="{{ site.baseurl }}/")
+        img.logo(src="favicon.ico")
+        | Bitmap Wire Logic Simulator
+      .ui.dropdown.right.floated.item
+        .item Оглавление
+        i.dropdown.icon
+        .ui.menu
+          a.item(href="introduction.html") Вступление
+          a.item(href="rules.html") Правила
+          a.item(href="not-or-and.html") Not, Or, And
+          a.item(href="trigger.html") Триггер
+
+  .ui.container {{ content }}
+
+  script.
+    $(function() {
+      $('.united.modal').modal({
+        allowMultiple: false,
+      });
+      $('.ui.dropdown').dropdown({
+        on: 'hover'
+      });
+    })
+  script(src="dist/base64ArrayBuffer.js")
+  script(src="dist/requestAnimationFrame.js")
+
+  // временный скрипт автообновления контанта в браузере
+  script.
+    if (document.location.host.startsWith("127.0.0.1")) {
+      var script = document.createElement('script');
+      script.src = "dist/live.js";
+      document.body.appendChild(script);
+    }
+
+  // Лисп
+  script.
+    // ol functions:
+    var ol_load_layout;
+    var ol_xpm3_to_board;
+    var ol_board_texture;
+    var ol_board_energize;
+    var ol_board_simulate;
+    // ol module:
+    var Module = {
+      INITIAL_MEMORY: 67108864,
+      postRun: [
+        function() {
+          console.log("Ol started.");
+          Module._new_ol();
+          ol_load_layout = Module._ol_load_layout;
+          ol_xpm3_to_board = Module._ol_xpm3_to_board;
+          ol_board_texture = Module._ol_board_texture;
+          ol_board_energize = Module._ol_board_energize;
+          ol_board_simulate = Module._ol_board_simulate;
+          handleCanvases();
+        }
+      ],
+      print: function(text) {
+        console.log(text);
+      },
+      printErr: function(text) {
+        console.error(text);
+      },
+      onAbort: function(text) {
+        console.error(text);
+      }
+    };
+    var script = document.createElement('script');
+    script.src = "wlca.js";
+    document.body.appendChild(script);
+
+  // макеты
+  script.
+    var SCALE = 10;
+
+    function handleCanvases()
+    {
+      // превратим все блоки кода layout в канвасы с привязанными к ним объектами Ol
+      $('.language-layout').each((index, code) => {
+        // вычислим размеры картинки
+        const layout = code.innerHTML.split('\n').filter(line => line && !line.startsWith(':'));
+        const height = layout.length - 2;
+        const width = layout[0].length - 2;
+
+        // конфигурационные атрибуты
+        const animated = code.parentNode.getAttribute("animated") || false;
+        const fps = Number(code.parentNode.getAttribute("fps")) || 20;
+        const scale = Number(code.parentNode.getAttribute("scale")) || 10;
+        const ttl = Number(code.parentNode.getAttribute("ttl")) || 5;
+
+        // заменим макет на канвас
+        const container = document.createElement('div')
+        container.classList.add('ui');
+        const canvas = document.createElement('canvas')
+        container.appendChild(canvas);
+
+        canvas.width = width * scale;
+        canvas.height = height * scale;
+        canvas.style.width = `${width * scale}px`;
+        canvas.style.height = `${height * scale}px`;
+        canvas.setAttribute('scale', scale);
+
+        canvas.classList.add('canvas');
+        code.parentNode.replaceChild(container, code);
+
+        const context = canvas.getContext("2d");
+        drawBoard(canvas); // нанесем клеточку пока читаем схему...
+
+        // отправим макет в лисп
+        var bytes = code.innerHTML;
+        var length = lengthBytesUTF8(bytes) + 1;
+
+        var ptr = Module._malloc(length);
+        stringToUTF8(bytes, ptr, length);
+
+        // parse image and make model from parsed image
+        canvas.attributes["xpm3"] = ol_load_layout(ptr);
+        console.log("canvas.attributes.xpm3", canvas.attributes.xpm3)
+        const board = ol_xpm3_to_board(canvas.attributes.xpm3);
+        canvas.attributes["board"] = board;
+
+        // подадим напряжение на клетки '*', если надо конечно
+        layout.forEach((line, j) => {
+          var i = -1;
+          while ((i = line.indexOf("*", i+1)) != -1) {
+            ol_board_energize(board, i, j, ttl);
+          }
+        })
+
+        // картинка
+        const img = new Image();
+        img.onload = () => {
+          context.imageSmoothingEnabled = false;
+          context.drawImage(img, 0, 0, canvas.width, canvas.height);
+          drawBoard(canvas);
+        };
+
+        // обновление текстуры схемы
+        var set_texture = () => {
+          var ptr = ol_board_texture(board);
+          // размер bmp текстуры в байтах
+          var padding = width * 3 + width % 4;
+          var len = height * padding + 54;
+          var str = new Uint8Array(len);
+          for (var i = 0; i < len; i++) {
+            var ch = getValue(ptr++, 'i8');
+            str[i] = ch;
+          }
+          img.src="data:image/bmp;base64," + base64ArrayBuffer(str);
+        }
+        set_texture();
+
+        // питание мышью
+        canvas.addEventListener('mousedown', (event) => {
+          let x = Math.floor(event.offsetX / scale);
+          let y = Math.floor(event.offsetY / scale);
+          ol_board_energize(board, x+1, y+1, ttl);
+          set_texture();
+        });
+
+        // кнопки управления
+        if (animated) {
+          const button = document.createElement('button')
+          button.classList.add('compact', 'ui', 'bottom', 'attached', 'icon', 'button');
+          container.appendChild(button);
+          const icon = document.createElement('i')
+          icon.classList.add('play', 'icon');
+          button.appendChild(icon);
+
+          let frames_per_sec = fps;
+          let interval = Math.floor(1000 / frames_per_sec);
+          let startTime = performance.now();
+          let previousTime = startTime;
+          let currentTime = 0;
+          let deltaTime = 0;
+
+          function animationLoop(timestamp) {
+            currentTime = timestamp;
+            deltaTime = currentTime-previousTime;
+            if (deltaTime > interval) {
+              previousTime = currentTime - (deltaTime % interval);
+              // такт симулятора и сразу покажем на экране
+              ol_board_simulate(board);
+              set_texture();
+            }
+            canvas.running = requestAnimationFrame(animationLoop);
+          }
+
+          // обработчики кнопок "play" и "pause"
+          var play = () => { 
+            icon.classList.remove('play');
+            icon.classList.add('pause');
+            button.onclick = pause;
+            canvas.running = requestAnimationFrame(animationLoop);
+          };
+          var pause = () => {
+            cancelAnimationFrame(canvas.running);
+            icon.classList.remove('pause');
+            icon.classList.add('play');
+            button.onclick = play;
+          }
+          button.onclick = play;
+
+          console.log("animated", animated)
+          if (animated == "auto") // автостарт?
+            play();
+        }
+      });
+    }
+
+    function drawBoard(canvas)
+    {
+      const context = canvas.getContext("2d");
+      const w = canvas.width;
+      const h = canvas.height;
+      const p = Number(canvas.attributes["scale"].value);
+
+      context.beginPath();
+      // 0.5 мы добавляем, чтобы линии были резкими
+      // только не спрашивайте меня почему так
+      for (var x = 0; x <= w; x += p) {
+        context.moveTo(x + 0.5, 0 + 0.5);
+        context.lineTo(x + 0.5, h + 0.5);
+      }
+
+      for (var y = 0; y <= h; y += p) {
+        context.moveTo(0 + 0.5, y + 0.5);
+        context.lineTo(w + 0.5, y + 0.5);
+      }
+
+      context.setLineDash([2, 1]);
+      context.strokeStyle = "dimgrey";
+      context.stroke();
+    }
