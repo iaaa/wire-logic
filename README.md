@@ -20,5 +20,5 @@ A simple and visual bitmap simulation of a real 8-bit microprocessor to explain 
 
 https://www.instructables.com/How-to-Build-an-8-Bit-Computer/  
 https://realhet.wordpress.com/2015/09/02/bitmap-logic-simulator/  
-https://www.dafont.com/i-pixel-u.font  
+https://www.dafont.com/minecraftia.font https://www.dafont.com/i-pixel-u.font  
 https://web.archive.org/web/20160725210001/https://karlscherer.com/Wireworld.html  
