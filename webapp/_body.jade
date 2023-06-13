@@ -2,16 +2,17 @@ body
   .ui.borderless.main.menu
     .ui.text.container
       a.header.item(href="{{ site.baseurl }}/")
-        img.logo(src="favicon.ico")
+        img.logo(src="/wire-logic/favicon.ico")
         | Bitmap Wire Logic Simulator
       .ui.dropdown.right.floated.item
         .item Оглавление
         i.dropdown.icon
         .ui.menu
-          a.item(href="introduction.html") Вступление
-          a.item(href="rules.html") Правила
-          a.item(href="not-or-and.html") Not, Or, And
-          a.item(href="trigger.html") Триггер
+          a.item(href="/wire-logic/pages/introduction.html") Вступление
+          a.item(href="/wire-logic/pages/rules.html") Правила
+          a.item(href="/wire-logic/pages/not-or-and.html") Not, Or, And
+          a.item(href="/wire-logic/pages/trigger.html") Триггер
+          a.item(href="/wire-logic/pages/clock-generator.html") Тактовый генератор
 
   .ui.container {{ content }}
 
@@ -24,14 +25,14 @@ body
         on: 'hover'
       });
     })
-  script(src="dist/base64ArrayBuffer.js")
-  script(src="dist/requestAnimationFrame.js")
+  script(src="/wire-logic/dist/base64ArrayBuffer.js")
+  script(src="/wire-logic/dist/requestAnimationFrame.js")
 
   // временный скрипт автообновления контанта в браузере
   script.
     if (document.location.host.startsWith("127.0.0.1")) {
       var script = document.createElement('script');
-      script.src = "dist/live.js";
+      script.src = "/wire-logic/dist/live.js";
       document.body.appendChild(script);
     }
 
@@ -69,7 +70,7 @@ body
       }
     };
     var script = document.createElement('script');
-    script.src = "wlca.js";
+    script.src = "/wire-logic/wlca.js";
     document.body.appendChild(script);
 
   // макеты
@@ -84,6 +85,7 @@ body
         const layout = code.innerHTML.split('\n').filter(line => line && !line.startsWith(':'));
         const height = layout.length - 2;
         const width = layout[0].length - 2;
+        console.log("width", width, "height", height)
 
         // конфигурационные атрибуты
         const animated = code.parentNode.getAttribute("animated") || false;
@@ -107,16 +109,22 @@ body
         code.parentNode.replaceChild(container, code);
 
         const context = canvas.getContext("2d");
-        drawBoard(canvas); // нанесем клеточку пока читаем схему...
+        if (scale > 2)
+          drawBoard(canvas); // нанесем клеточку пока читаем схему...
 
         // отправим макет в лисп
         var bytes = code.innerHTML;
-        var length = lengthBytesUTF8(bytes) + 1;
+        var length = bytes.length + 4 - (bytes.length % 4);
+        console.log("length", length)
 
         var ptr = Module._malloc(length);
-        stringToUTF8(bytes, ptr, length);
+        console.log("ptr: ", ptr)
+        for (var i = 0; i < bytes.length; i++)
+          setValue(ptr+i, bytes.charCodeAt(i), 'i8');
+        setValue(ptr+bytes.length, 0, 'i8');
 
         // parse image and make model from parsed image
+        
         canvas.attributes["xpm3"] = ol_load_layout(ptr);
         console.log("canvas.attributes.xpm3", canvas.attributes.xpm3)
         const board = ol_xpm3_to_board(canvas.attributes.xpm3);
@@ -135,7 +143,8 @@ body
         img.onload = () => {
           context.imageSmoothingEnabled = false;
           context.drawImage(img, 0, 0, canvas.width, canvas.height);
-          drawBoard(canvas);
+          if (scale > 2)
+            drawBoard(canvas);
         };
 
         // обновление текстуры схемы

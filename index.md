@@ -1,5 +1,5 @@
 ---
-layout: page
+layout: html
 categories: index
 title: Bitmap Wire Logic Simulator
 ---
@@ -7,7 +7,7 @@ title: Bitmap Wire Logic Simulator
 
 Это страничка очень простого и не требующего особых знаний объяснения самых низкоуровневых основ организации работы микропроцессоров (ниже только физические принципы функционирования транзисторов). Настолько простого, что не составит труда объяснить даже школьникам средних классов. Проверено.
 
-> *Проект был вдохновлен страничкой [Bitmap Logic Simulator](https://realhet.wordpress.com/2015/09/02/bitmap-logic-simulator/){:target="_blank"}, наша им большая благодарность.*
+> *Проект был вдохновлен [Bitmap Logic Simulator](https://realhet.wordpress.com/2015/09/02/bitmap-logic-simulator/){:target="_blank"}, наша им большая благодарность.*
 
 # Зачем
 
@@ -17,7 +17,7 @@ title: Bitmap Wire Logic Simulator
 
 Анимированной картинкой. Вот такой (внимание на большой изумрудный цифровой индикатор):
 
-![](media/0-1.gif)
+![](/wire-logic/media/0-1.gif)
 
 Что-то знакомое, да? Напоминает [микрофотографии процессорных кристаллов](https://en.wikipedia.org/wiki/Die_(integrated_circuit)){:target="_blank"}, только в динамике.
 
@@ -34,4 +34,4 @@ title: Bitmap Wire Logic Simulator
 
 *(если текст выше для вас прозвучал абракадаброй - не страшно, расшифровка будет).*
 
-[Продолжайте...](introduction.html)
+[Продолжайте...](/wire-logic/pages/introduction.html)
