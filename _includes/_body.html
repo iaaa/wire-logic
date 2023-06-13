@@ -104,7 +104,7 @@
         code.parentNode.replaceChild(container, code);
     
         const context = canvas.getContext("2d");
-        if (scale > 2)
+        if (scale > 3)
           drawBoard(canvas); // нанесем клеточку пока читаем схему...
     
         // отправим макет в лисп
@@ -138,7 +138,7 @@
         img.onload = () => {
           context.imageSmoothingEnabled = false;
           context.drawImage(img, 0, 0, canvas.width, canvas.height);
-          if (scale > 2)
+          if (scale > 3)
             drawBoard(canvas);
         };
     
